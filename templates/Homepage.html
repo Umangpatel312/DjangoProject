@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Homepage</title>
+</head>
+<body>
+welcome
+
+<a href="{% url 'getstatus'%}">show status</a>
+<form action="{% url 'addpersonfaces'%}">
+    enter the enrollment no:<input type="text" name="Roll">
+    display status<input type="submit">
+</form>
+</body>
+</html>
