@@ -12,6 +12,12 @@ import sys
 import cognitive_face as CF
 import urllib
 from .forms import ImageForm
+from openpyxl import Workbook, load_workbook
+
+try:
+    from openpyxl.cell import get_column_letter
+except ImportError:
+    from openpyxl.utils import get_column_letter
 
 def second(request):
     form = ImageForm()
@@ -30,14 +36,21 @@ def addStudents(name,enroll):
 def getPersonIdFromDatabase(roll):
     obj=Student.objects.get(Roll=roll)
     return obj.personID
-def StudentAll(roll,res):
+def getDataUsingPersonId(personId):
+    obj=Student.objects.get(personID=personId)
+    return obj
+def selectStudent():
+    return Student.objects.all()
+
+def updatePersonId(roll,res):
     obj=Student.objects.get(Roll=roll)
     if obj is not None:
         obj.personID=res['personId']
         obj.save()
         return True
     return False
-
+def countStudent():
+    return Student.objects.count()
 
 def addDetails(request):
     cap = cv2.VideoCapture(0)
@@ -88,7 +101,7 @@ def createGroup(request):
         print(str('user'+roll[-2:]))
         res = CF.person.create(personGroupId(), str('user'+roll[-2:]))  # getting personid
         print(res)
-        check=StudentAll(roll,res)
+        check=updatePersonId(roll,res)
         if check:
             print("Person ID successfully added to the database")
             #addPersonFaces(roll)
@@ -156,6 +169,161 @@ def imageUpload(request):
         form = ImageForm()
     return render(request, 'imageupload.html', {'form': form})
 
+def detectFace(request):
+    detector = dlib.get_frontal_face_detector()
+
+    #if len(sys.argv) is not 1:
+    img = cv2.imread('./media/images/umang.jpeg')
+    dets = detector(img, 1)
+    if not os.path.exists('./Cropped_faces'):
+        os.makedirs('./Cropped_faces')
+    print("detected = " + str(len(dets)))
+    for i, d in enumerate(dets):
+        cv2.imwrite('./Cropped_faces/face' + str(i + 1) + '.jpg', img[d.top():d.bottom(), d.left():d.right()])
+    return redirect('success')
+
+def getSpreadsheet(request):
+    currentDate = time.strftime("%d_%m_%y")
+
+    # create a workbook and add a worksheet
+    if (os.path.exists('./reports.xlsx')):
+        wb = load_workbook(filename="reports.xlsx")
+        sheet = wb.get_sheet_by_name('Cse15')
+        # sheet[ord() + '1']
+
+        sheet_obj = wb.active
+        m_row = sheet_obj.max_row
+        m_column = sheet_obj.max_column
+        d = {}
+
+        for i in range(3, m_row + 1):
+            key = sheet_obj.cell(row=i, column=1).value
+            v = []
+            for j in range(2, m_column + 1):
+                v1 = sheet_obj.cell(row=i, column=j)
+                v.append(v1.value)
+            d[key] = v
+
+        value =countStudent()
+        if len(d) != value:
+            queryset = Student.objects.all()
+            for student in queryset:
+                name=student.Name
+                roll=student.Roll
+                if not roll in d:
+                    # l = []
+                    d[roll] = []
+                    d[roll].append(name)
+                    print(f"if {roll} {name} {d[roll]}")
+            r = 3
+
+            print(d)
+            for key, value in d.items():
+                col = 1
+                print(key, end=' ')
+                sheet_obj.cell(row=r, column=col).value = key
+
+                for list in value:
+                    col += 1
+                    sheet_obj.cell(row=r, column=col).value = list
+                    print(list, end=' ')
+                r += 1
+
+        for col_index in range(1, 100):
+            col = get_column_letter(col_index)
+            if sheet.cell('%s%s' % (col, 1)).value is None:
+                col2 = get_column_letter(col_index - 1)
+                # print sheet.cell('%s%s'% (col2, 1)).value
+                if sheet.cell('%s%s' % (col2, 1)).value != currentDate:
+                    sheet['%s%s' % (col, 1)] = currentDate
+                break
+
+        # saving the file
+        wb.save(filename="reports.xlsx")
+
+    else:
+        wb = Workbook()
+        dest_filename = 'reports.xlsx'
+        sortedData=Student.objects.order_by('Roll')
+        # creating worksheet and giving names to column
+        ws1 = wb.active
+        ws1.title = "Cse15"
+        ws1.append(('Roll Number', 'Name', currentDate))
+        ws1.append(('', '', ''))
+
+        # entering students information from database
+        for student in sortedData:
+            ws1.append((student.Roll,student.Name))
+
+        # saving the file
+        wb.save(filename=dest_filename)
+        return  redirect('success')
+def identify(request):
+    currentDate = time.strftime("%d_%m_%y")
+    wb = load_workbook(filename="reports.xlsx")
+    sheet = wb.get_sheet_by_name('Cse15')
+
+    def getDateColumn():
+        for i in range(1, len(sheet.rows[0]) + 1):
+            col = get_column_letter(i)
+            if sheet.cell('%s%s' % (col, '1')).value == currentDate:
+                return col
+
+    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    CF.Key.set(Key)
+
+    BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0'  # Replace with your regional Base URL
+    CF.BaseUrl.set(BASE_URL)
+    # connect = connect = sqlite3.connect("Face-DataBase")
+    # c = connect.cursor()
+
+    attend = [0 for i in range(150)]
+
+    currentDir = os.path.dirname(os.path.abspath(__file__))
+    directory = os.path.join(currentDir, 'Cropped_faces')
+    print(personGroupId())
+    for filename in os.listdir(directory):
+        if filename.endswith(".jpg"):
+            imgurl = os.path.join(directory, filename)
+
+            res = CF.face.detect(imgurl)
+            print(imgurl)
+            print(res)
+            if len(res) != 1:
+                print("No face detected.")
+                continue
+
+            faceIds = []
+            for face in res:
+                faceIds.append(face['faceId'])
+            print(f'{faceIds} {personGroupId()}')
+
+            res = CF.face.identify(faceIds, personGroupId())
+            print(filename)
+            print(res)
+            for face in res:
+                if not face['candidates']:
+                    print("Unknown")
+                else:
+                    personId = face['candidates'][0]['personId']
+                    # c.execute("SELECT * FROM Students WHERE personID = ?", (personId,))
+                    # row = c.fetchone()
+                    row=getDataUsingPersonId(personId)
+                    attend[row.Roll] += 1
+                    print(row.Name + " recognized")
+            time.sleep(6)
+
+    for row in range(2, len(sheet.columns[0]) + 1):
+        roll = sheet.cell('A%s' % row).value
+        if roll is not None:
+            # rn = rn[-2:]
+            if attend[roll] != 0:
+                col = getDateColumn()
+                sheet['%s%s' % (col, str(row))] = 1
+
+    wb.save(filename="reports.xlsx")
+    return redirect('success')
+
 def success(request):
-    return HttpResponse('successfully uploaded')
+    return HttpResponse('successfully done')
 

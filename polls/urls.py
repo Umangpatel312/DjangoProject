@@ -11,6 +11,9 @@ urlpatterns = [
     path('imageupload/', views.imageUpload, name='imageupload'),
     path('success/', views.success, name='success'),
     path('', views.second),
+    path('detectfaces/',views.detectFace,name='detectfaces'),
+    path('getspreadsheet/',views.getSpreadsheet,name='getspredsheet'),
+    path('identify/',views.identify,name='identify'),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,document_root=settings.MEDIA_ROOT)
