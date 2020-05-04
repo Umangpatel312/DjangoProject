@@ -4,7 +4,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('index/', views.first, name='form'),
+    path('index/', views.index, name='form'),
     path('addstudent/', views.addDetails, name='addstudent'),
     path('addpersonfaces/', views.addPersonFaces, name='addpersonfaces'),
     path('creategroup/', views.createGroup, name='creategroup'),

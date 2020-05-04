@@ -22,10 +22,10 @@ except ImportError:
 def second(request):
     form = ImageForm()
     return render(request,'imageupload.html',{'form': form})
-def first(request):
+def index(request):
     return render(request,'Form.html')
 def personGroupId():
-    return 'test'
+    return 'test5'
 
 def addStudents(name,enroll):
     s=Student()
@@ -135,7 +135,7 @@ def addPersonFaces(request):
                     print(res)
                 time.sleep(6)
         train()
-        return render(request,'status.html')
+        return redirect('success')
 def train():
 
     Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
@@ -308,18 +308,20 @@ def identify(request):
                     personId = face['candidates'][0]['personId']
                     # c.execute("SELECT * FROM Students WHERE personID = ?", (personId,))
                     # row = c.fetchone()
-                    row=getDataUsingPersonId(personId)
-                    attend[row.Roll] += 1
+                    row = getDataUsingPersonId(personId)
+                    id = int(row.Roll[-2:])
+                    attend[id] += 1
                     print(row.Name + " recognized")
             time.sleep(6)
-
-    for row in range(2, len(sheet.columns[0]) + 1):
-        roll = sheet.cell('A%s' % row).value
+    # print(len(sheet.columns[0]))
+    # for r in range(2, len(sheet.columns[0]) + 1):
+    for i in range(2,sheet.max_row+1):
+        roll = sheet.cell('A%s' % (str(i),str(0))).value
         if roll is not None:
-            # rn = rn[-2:]
-            if attend[roll] != 0:
+            id = int(roll[-2:])
+            if attend[id] != 0:
                 col = getDateColumn()
-                sheet['%s%s' % (col, str(row))] = 1
+                sheet['%s%s' % (col, str(i))] = 1
 
     wb.save(filename="reports.xlsx")
     return redirect('success')
