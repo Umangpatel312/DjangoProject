@@ -56,7 +56,6 @@ def addDetails(request):
     cap = cv2.VideoCapture(0)
     detector = dlib.get_frontal_face_detector()
 
-
     name = request.GET['Name']
     roll = request.GET['Roll']
     print(name)
@@ -172,8 +171,8 @@ def imageUpload(request):
 def detectFace(request):
     detector = dlib.get_frontal_face_detector()
 
-    #if len(sys.argv) is not 1:
-    img = cv2.imread('./media/images/umang.jpeg')
+    #if len
+    img = cv2.imread('./media/images/a.jpg')
     dets = detector(img, 1)
     if not os.path.exists('./Cropped_faces'):
         os.makedirs('./Cropped_faces')
@@ -257,7 +256,7 @@ def getSpreadsheet(request):
 
         # saving the file
         wb.save(filename=dest_filename)
-        return  redirect('success')
+    return redirect('success')
 def identify(request):
     currentDate = time.strftime("%d_%m_%y")
     wb = load_workbook(filename="reports.xlsx")
@@ -316,7 +315,7 @@ def identify(request):
     # print(len(sheet.columns[0]))
     # for r in range(2, len(sheet.columns[0]) + 1):
     for i in range(2,sheet.max_row+1):
-        roll = sheet.cell('A%s' % (str(i),str(0))).value
+        roll = sheet.cell('A%s' % i).value
         if roll is not None:
             id = int(roll[-2:])
             if attend[id] != 0:
@@ -328,4 +327,3 @@ def identify(request):
 
 def success(request):
     return HttpResponse('successfully done')
-
