@@ -2,7 +2,7 @@
 
 # Create your models here.
 from django.db import models
-
+import os
 
 class Question(models.Model):
     question_text = models.CharField(max_length=200)
@@ -19,4 +19,6 @@ class Student(models.Model):
     personID=models.CharField(max_length=200)
 # models.py
 class Image(models.Model):
-	img= models.ImageField(upload_to='images/')
+    img= models.ImageField(upload_to='images/')
+    def filename(self):
+        return os.path.basename(self.img.name)

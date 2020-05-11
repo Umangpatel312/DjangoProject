@@ -13,19 +13,20 @@ import cognitive_face as CF
 import urllib
 from .forms import ImageForm
 from openpyxl import Workbook, load_workbook
-
+from .models import Image
+from . import forms
 try:
     from openpyxl.cell import get_column_letter
 except ImportError:
     from openpyxl.utils import get_column_letter
 
-def second(request):
-    form = ImageForm()
-    return render(request,'imageupload.html',{'form': form})
+def personGroupId():
+    return 'test1'
 def index(request):
     return render(request,'Form.html')
-def personGroupId():
-    return 'test5'
+def imageForm(request):
+    form = ImageForm()
+    return render(request,'imageupload.html',{'form': form})
 
 def addStudents(name,enroll):
     s=Student()
@@ -33,12 +34,15 @@ def addStudents(name,enroll):
     s.Name=name
     s.Roll=enroll
     s.save()
+
 def getPersonIdFromDatabase(roll):
     obj=Student.objects.get(Roll=roll)
     return obj.personID
+
 def getDataUsingPersonId(personId):
     obj=Student.objects.get(personID=personId)
     return obj
+
 def selectStudent():
     return Student.objects.all()
 
@@ -49,6 +53,7 @@ def updatePersonId(roll,res):
         obj.save()
         return True
     return False
+
 def countStudent():
     return Student.objects.count()
 
@@ -91,7 +96,7 @@ def addDetails(request):
 
 def createGroup(request):
 
-    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    Key = '9e06d35b383345f38f9036d0410aba4c'
     CF.Key.set(Key)
     BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0/'  # Replace with your regional Base URL
     CF.BaseUrl.set(BASE_URL)
@@ -107,12 +112,13 @@ def createGroup(request):
             #train()
         else:
             print("Record doesnt found")
+            return redirect("error")
 
     return render(request,'Homepage.html')
 
 def addPersonFaces(request):
 
-    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    Key = '9e06d35b383345f38f9036d0410aba4c'
     CF.Key.set(Key)
 
     BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0/'  # Replace with your regional Base URL
@@ -134,10 +140,10 @@ def addPersonFaces(request):
                     print(res)
                 time.sleep(6)
         train()
-        return redirect('success')
+        return redirect('imageupload')
 def train():
 
-    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    Key = '9e06d35b383345f38f9036d0410aba4c'
     CF.Key.set(Key)
 
     BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0/'  # Replace with your regional Base URL
@@ -148,7 +154,7 @@ def train():
     print(res)
     checkStatus()
 def checkStatus():
-    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    Key = '9e06d35b383345f38f9036d0410aba4c'
     CF.Key.set(Key)
 
     BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0'  # Replace with your regional Base URL
@@ -156,32 +162,43 @@ def checkStatus():
 
     res = CF.person_group.get_status(personGroupId())
     print(res)
+    if res['status'] != 'succeeded':
+        return HttpResponse('model was not trained')
     # return render(request,'status.html')
 def imageUpload(request):
     if request.method == 'POST':
         form = ImageForm(request.POST, request.FILES)
-
+        # print(form.Meta.model.filename(self))
         if form.is_valid():
-            form.save()
+            img = form.cleaned_data.get("imageInput")
+            obj=Image.objects.create(img=img)
+            imgName=obj.filename()
+            obj.save()
+            detectFace(imgName)
+            getSpreadsheet()
+            identify()
             return redirect('success')
     else:
         form = ImageForm()
     return render(request, 'imageupload.html', {'form': form})
 
-def detectFace(request):
+def detectFace(imgName):
     detector = dlib.get_frontal_face_detector()
-
     #if len
-    img = cv2.imread('./media/images/a.jpg')
-    dets = detector(img, 1)
-    if not os.path.exists('./Cropped_faces'):
-        os.makedirs('./Cropped_faces')
-    print("detected = " + str(len(dets)))
-    for i, d in enumerate(dets):
-        cv2.imwrite('./Cropped_faces/face' + str(i + 1) + '.jpg', img[d.top():d.bottom(), d.left():d.right()])
-    return redirect('success')
 
-def getSpreadsheet(request):
+    img = cv2.imread('./media/images/'+imgName)
+    dets = detector(img, 1)
+    if not os.path.exists('./polls/Cropped_faces'):
+        os.makedirs('./polls/Cropped_faces')
+    print("detected = " + str(len(dets)))
+    if len(dets)!=0:
+        for i, d in enumerate(dets):
+            cv2.imwrite('./polls/Cropped_faces/face' + str(i + 1) + '.jpg', img[d.top():d.bottom(), d.left():d.right()])
+        return
+    else:
+        return HttpResponse("face not detected")
+
+def getSpreadsheet():
     currentDate = time.strftime("%d_%m_%y")
 
     # create a workbook and add a worksheet
@@ -256,8 +273,7 @@ def getSpreadsheet(request):
 
         # saving the file
         wb.save(filename=dest_filename)
-    return redirect('success')
-def identify(request):
+def identify():
     currentDate = time.strftime("%d_%m_%y")
     wb = load_workbook(filename="reports.xlsx")
     sheet = wb.get_sheet_by_name('Cse15')
@@ -268,7 +284,7 @@ def identify(request):
             if sheet.cell('%s%s' % (col, '1')).value == currentDate:
                 return col
 
-    Key = '6fe4e8e0e5074ff98c23ed2030e0a153'
+    Key = '9e06d35b383345f38f9036d0410aba4c'
     CF.Key.set(Key)
 
     BASE_URL = 'https://westcentralus.api.cognitive.microsoft.com/face/v1.0'  # Replace with your regional Base URL
@@ -323,7 +339,10 @@ def identify(request):
                 sheet['%s%s' % (col, str(i))] = 1
 
     wb.save(filename="reports.xlsx")
-    return redirect('success')
+    # return redirect('success')
 
 def success(request):
     return HttpResponse('successfully done')
+
+def error(request):
+    return HttpResponse('something might wrong')
