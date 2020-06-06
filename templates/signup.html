@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Upload Image</title>
+    <title>Signup</title>
 </head>
 <body>
-<form action="{% url 'takeattendance'%}" method = "post" enctype="multipart/form-data">
+<form action="{% url 'signup' %}" method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="submit">
+    <input type="submit" >
 </form>
 </body>
 </html>

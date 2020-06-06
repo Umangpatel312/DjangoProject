@@ -5,15 +5,14 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('index/', views.index, name='form'),
-    path('addstudent/', views.addDetails, name='addstudent'),
+    path('addstudent/', views.addStudent, name='addstudent'),
     path('creategroup/', views.createGroup, name='creategroup'),
     path('addpersonfaces/', views.addPersonFaces, name='addpersonfaces'),
-    path('imageupload/', views.imageUpload, name='imageupload'),
-    # path('success/', views.success, name='success'),
-    # path('', views.imageForm),
-    # path('detectfaces/',views.detectFace,name='detectfaces'),
-    # path('getspreadsheet/',views.getSpreadsheet,name='getspredsheet'),
-    # path('identify/',views.identify,name='identify'),
+    path('takeattendance/', views.imageUpload, name='takeattendance'),
+    path('signup/', views.signup, name='signup'),
+    # path('studentregistration/', views.studentRegistation, name='studentregistration'),
+    path('login/', views.login, name='login'),
+path('generateattendance/', views.generateAttendance, name='generateattendance'),
     path('success/', views.success, name='success'),
     path('error/', views.error, name='error'),
 ]

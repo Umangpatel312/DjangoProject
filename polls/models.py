@@ -14,11 +14,27 @@ class Choice(models.Model):
     choice_text = models.CharField(max_length=200)
     votes = models.IntegerField(default=0)
 class Student(models.Model):
+    Emails = models.EmailField(max_length=200)
+    Emailt = models.EmailField(max_length=200, primary_key=True)
     Name=models.CharField(max_length=200)
     Roll = models.CharField(max_length=200)
     personID=models.CharField(max_length=200)
+    Branch=models.CharField(max_length=20)
+    Sem = models.CharField(max_length=20)
+    Div = models.CharField(max_length=20)
+
 # models.py
 class Image(models.Model):
-    img= models.ImageField(upload_to='images/')
+    Imagepath= models.ImageField(upload_to='images/')
+    Emailt=models.CharField(max_length=200)
+    Subject=models.CharField(max_length=50)
+    Branch=models.CharField(max_length=20)
+    Sem = models.CharField(max_length=20)
+    Div = models.CharField(max_length=20)
+    Date=models.DateField(auto_now=True)
     def filename(self):
-        return os.path.basename(self.img.name)
+        return os.path.basename(self.Imagepath.name)
+class Signup(models.Model):
+    Emailt=models.EmailField(max_length=200,primary_key=True)
+    Name=models.CharField(max_length=200)
+    Password=models.CharField(max_length=200)
